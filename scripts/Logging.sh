@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+set -euo pipefail
+
 Logging() {
   local type=$(echo "$1" | tr '[:upper:]' '[:lower:]')
   local message=$2
