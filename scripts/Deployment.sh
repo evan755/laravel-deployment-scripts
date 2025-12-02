@@ -1,57 +1,21 @@
 #!/usr/bin/env bash
 
-Logging() {
-  local type=$(echo "$1" | tr '[:upper:]' '[:lower:]')
-  local message=$2
-  local timestamp=$(date '+%Y-%m-%d %H:%M:%S %Z')
-  local label color fd
+set -euo pipefail
 
-  case "$type" in
-      info)
-        label="[INFO]"
-        color=$(tput setaf 2)
-        fd=1
-        ;;
-      debug)
-        label="[DEBUG]"
-        color=$(tput setaf 5)
-        fd=1
-        ;;
-      warn)
-        label="[WARN]"
-        color=$(tput setaf 3)
-        fd=1
-        ;;
-      error)
-        label="[ERROR]"
-        color=$(tput setaf 1)
-        fd=2
-        ;;
-      fatal)
-        label="[FATAL]"
-        color=$(tput setaf 1)$(tput bold)$(tput setab 3)  # 红色粗体，黄色背景
-        fd=2
-        ;;
-      *)
-        label="[UNKNOWN]"
-        color=$(tput setaf 7)$(tput setab 1)  # 白字红底
-        fd=2
-        ;;
-  esac
+script_dir=$(dirname $(readlink -f "$0"))
 
-  printf -v label_fixed "%-9s" "$label"
-  local colorEnd=$(tput sgr0)
-  local output="${color}${label_fixed} [${timestamp}] ${message} ${colorEnd}"
-  if [ "$fd" -eq 1 ]; then
-    echo "$output"
-  else
-    echo "$output" >&2
-  fi
+if [[ -f "${script_dir}/Logging.sh" ]]; then
+    source "${script_dir}/Logging.sh"
+else
+    echo "ERROR: Logging.sh not found in ${script_dir}" >&2
+    exit 1
+fi
+
+function App() {
+    Logging info "Starting Laravel Deployment Scripts"
+
+    Logging info "Deployment completed successfully"
+    return 0
 }
 
-function App()
-{
-  Logging info "Laravel Deployment Scripts"
-}
-
-App
+App;
