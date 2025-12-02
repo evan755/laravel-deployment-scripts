@@ -3,6 +3,8 @@
 set -euo pipefail
 
 dependencies=(
+  'git'
+  'ssh-keygen'
   'jq'
   'aws'
   'php'
