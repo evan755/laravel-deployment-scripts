@@ -259,6 +259,7 @@ dependencies=(
   'aws'
   'php'
   'composer'
+  'npm'
   'curl'
 )
 
@@ -544,25 +545,28 @@ AppDeployment() {
       "$shared_dir/storage/logs" \
       "$shared_dir/uploads" \
       "$shared_dir/public/uploads"
+    set_ownership "$project_dir"
   fi
 
   UI info "克隆代码: git@github.com:${repo}.git -> ${release_dir}"
-  git clone -b "$branch" "git@github.com:${repo}.git" "$release_dir"
+  sudo -u "$runtime_user" git clone -b "$branch" "git@github.com:${repo}.git" "$release_dir"
 
-  rm -rf "${release_dir}/storage" "${release_dir}/public/uploads" 2>/dev/null || true
-  mkdir -p "${release_dir}/public"
-  ln -sfn "../../shared/storage" "${release_dir}/storage"
-  ln -sfn "../../shared/uploads" "${release_dir}/public/uploads"
+  UI info "安装 Composer 依赖"
+  sudo -u "$runtime_user" composer install --working-dir="$release_dir"
 
-  set_ownership "$release_dir"
+  UI info "安装 NPM 依赖"
+  sudo -u "$runtime_user" npm install --prefix "$release_dir"
+
+  UI info "构建前端资源"
+  sudo -u "$runtime_user" npm run build --prefix "$release_dir"
 
   if [[ -L "$current_link" ]]; then
     local old_current
     old_current=$(readlink "$current_link")
-    ln -sfn "$old_current" "$previous_link"
+    sudo -u "$runtime_user" ln -sfn "$old_current" "$previous_link"
   fi
 
-  ln -sfn "releases/${timestamp}" "$current_link"
+  sudo -u "$runtime_user" ln -sfn "releases/${timestamp}" "$current_link"
 
   local version_count
   version_count=$(find "${releases_dir}" -maxdepth 1 -mindepth 1 -type d | wc -l | tr -d ' ')
@@ -575,7 +579,7 @@ AppDeployment() {
       local dir_name
       dir_name=$(basename "$dir")
       if [[ "$dir_name" != "$current_target" && "$dir_name" != "$previous_target" ]]; then
-        rm -rf "$dir"
+        sudo -u "$runtime_user" rm -rf "$dir"
       fi
     done
   fi
